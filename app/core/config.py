@@ -49,3 +49,7 @@ class MongoDBConfiguration(BaseModel):
     SERVER_DATABASE_NAME: str = lambda: os.getenv("MONGO_DATABASENAME")
 
     SERVER_STRING_CONFIG: str = f"mongodb://{SERVER_USERNAME}:{SERVER_PORT}@{SERVER_HOST}:{SERVER_PORT}/{SERVER_DATABASE_NAME}?authSource=admin"
+
+
+class PostgresqlConfiguration(BaseModel):
+    pass

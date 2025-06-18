@@ -25,6 +25,7 @@ middlewares = [
     Middleware(DDoSMiddlewareAPP),
     Middleware(GZipMiddleware),
     Middleware(CORSMiddleware),
+    Middleware(WSGIMiddleware),
     Middleware(CORSMiddleware, 
                allow_origins=ALLOW_ORIGINS,
                allow_credentials=True,
