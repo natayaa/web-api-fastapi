@@ -1,55 +1,66 @@
 from pydantic import BaseModel, Field
+from typing import Literal, Optional
 from dotenv import load_dotenv
-
-
 import os
 
-# init load environment
+# Load .env file
 load_dotenv()
 
+
 class APPConfig(BaseModel):
+    APP_ENVIRONMENT: Literal['dev', 'staging', 'prod'] = Field(default_factory=lambda: os.getenv("APPLICATION_ENVIRONMENT", "dev"))
     APP_HOST: str = Field(default_factory=lambda: os.getenv("APPLICATION_HOST", "localhost"))
-    APP_PORT: int = Field(default_factory=lambda: os.getenv("APPLICATION_PORT", 80))
+    APP_PORT: int = Field(default_factory=lambda: int(os.getenv("APPLICATION_PORT", 8000)))
     APP_DEBUG: bool = Field(default_factory=lambda: os.getenv("APPLICATION_DEBUG", "false").lower() == "true")
-    APP_SSLCERT: str = Field(default_factory=lambda: os.getenv("APPLICATION_SSLCERT_PATH"))
-    APP_SSLPEM: str = Field(default_factory=lambda: os.getenv("APPLICATION_SSLPEM"))
+    APP_SSLCERT: Optional[str] = Field(default_factory=lambda: os.getenv("APPLICATION_SSLCERT_PATH"))
+    APP_SSLPEM: Optional[str] = Field(default_factory=lambda: os.getenv("APPLICATION_SSLPEM"))
 
-    # CONFIG
-    APP_APINAME: str = lambda: os.getenv("WEBAPI_NAME")
-    APP_API_DEFAULT_PATH: str = Field(lambda: os.getenv("API_DEFAULT_PATH"))
-    APP_API_DESC: str = "" # try to load from txt
-    API_VERSION: str = lambda: os.getenv("API_VERSION")
+    # Metadata
+    APP_APINAME: Optional[str] = Field(default_factory=lambda: os.getenv("WEBAPI_NAME", "FastAPI Application"))
+    APP_API_DEFAULT_PATH: Optional[str] = Field(default_factory=lambda: os.getenv("API_DEFAULT_PATH", "/api"))
+    
+    # Load API description from file if exists
+    APP_API_DESC: str = Field(default_factory=lambda: open("description.txt").read() if os.path.exists("description.txt") else "")
+    API_VERSION: Optional[str] = Field(default_factory=lambda: os.getenv("API_VERSION", "1.0.0"))
+    API_DOCS_ENABLE: bool = Field(default_factory=lambda: os.getenv("API_DOCS_ENABLE", "true").lower() == "true")
 
-   
+    # Monitoring
+    API_PROMETHEUS: bool = Field(default_factory=lambda: os.getenv("API_PROMETHEUS", "false").lower() == "true")
+
 
 class APIConfiguration(BaseModel):
-    # API SECURITY CONFIGURATION
-    API_ALGORITHM: str = Field(default_factory=lambda: os.getenv("API_SECURITY_ALGORITHM"))
+    API_ALGORITHM: str = Field(default_factory=lambda: os.getenv("API_SECURITY_ALGORITHM", "HS256"))
     API_SECRET_KEY: str = Field(default_factory=lambda: os.getenv("API_SECRET_KEY"))
     API_REFRESH_SECRETKEY: str = Field(default_factory=lambda: os.getenv("API_REFRESH_SECRETKEY"))
     API_CSRF_SECRETKEY: str = Field(default_factory=lambda: os.getenv("API_CSRFKEY"))
 
-    API_ACCESS_EXPIRES_MINUTES: int = os.getenv("API_ACCESS_EXPIRES_MINUTES", 15)
-    API_REFRESH_EXPIRES_DAYS: int = os.getenv("API_REFRESH_EXPIRES_DAYS", 7)
-    API_CSRF_EXPIRES_DAYS: int = os.getenv("API_CSRF_EXPIRES_DAYS")
-    API_SESSION_ID_EXPIRES: int = os.getenv("API_SESSION_ID_EXPIRES", 1) # 1 day
-    
-    # HEADER SECURITY CONFIGURATION
-    HEADERS_HTTP_ONLY: bool = Field(lambda: os.getenv("HEADERS_HTTP_ONLY", "false").lower() == "true")
-    HEADERS_DEFAULT_PATH: str = Field(lambda: os.getenv("HEADERS_DEFAULT_PATH"))
-    HEADERS_SAMESITE: str = Field(lambda: os.getenv("HEADERS_SAMESITE"))
-    HEADERS_TOKEN_MAGAGE: int = Field(lambda: os.getenv("HEADERS_TOKEN_MAXAGE"))
+    API_ACCESS_EXPIRES_MINUTES: int = Field(default_factory=lambda: int(os.getenv("API_ACCESS_EXPIRES_MINUTES", 15)))
+    API_REFRESH_EXPIRES_DAYS: int = Field(default_factory=lambda: int(os.getenv("API_REFRESH_EXPIRES_DAYS", 7)))
+    API_CSRF_EXPIRES_DAYS: int = Field(default_factory=lambda: int(os.getenv("API_CSRF_EXPIRES_DAYS", 2)))
+    API_SESSION_ID_EXPIRES: int = Field(default_factory=lambda: int(os.getenv("API_SESSION_ID_EXPIRES", 1)))  # 1 day
+
+    # Header settings
+    HEADERS_HTTP_ONLY: bool = Field(default_factory=lambda: os.getenv("HEADERS_HTTP_ONLY", "true").lower() == "true")
+    HEADERS_DEFAULT_PATH: str = Field(default_factory=lambda: os.getenv("HEADERS_DEFAULT_PATH", "/"))
+    HEADERS_SAMESITE: str = Field(default_factory=lambda: os.getenv("HEADERS_SAMESITE", "Lax"))
+    HEADERS_TOKEN_MAGAGE: int = Field(default_factory=lambda: int(os.getenv("HEADERS_TOKEN_MAXAGE", 86400)))  # 1 day
 
 
 class MongoDBConfiguration(BaseModel):
-    SERVER_HOST: str = lambda: os.getenv("MONGO_SERVERHOST", "localhost")
-    SERVER_PORT: int = lambda: os.getenv("MONGO_SERVERPORT", 27017)
-    SERVER_USERNAME: str = lambda: os.getenv("MONGO_USERNAME")
-    SERVER_PASSWORD: str = lambda: os.getenv("MONGO_PASSWORD")
-    SERVER_DATABASE_NAME: str = lambda: os.getenv("MONGO_DATABASENAME")
+    SERVER_HOST: str = Field(default_factory=lambda: os.getenv("MONGO_SERVERHOST", "localhost"))
+    SERVER_PORT: int = Field(default_factory=lambda: int(os.getenv("MONGO_SERVERPORT", 27017)))
+    SERVER_USERNAME: Optional[str] = Field(default_factory=lambda: os.getenv("MONGO_USERNAME"))
+    SERVER_PASSWORD: Optional[str] = Field(default_factory=lambda: os.getenv("MONGO_PASSWORD"))
+    SERVER_DATABASE_NAME: str = Field(default_factory=lambda: os.getenv("MONGO_DATABASENAME", "test"))
 
-    SERVER_STRING_CONFIG: str = f"mongodb://{SERVER_USERNAME}:{SERVER_PORT}@{SERVER_HOST}:{SERVER_PORT}/{SERVER_DATABASE_NAME}?authSource=admin"
+    @property
+    def SERVER_STRING_CONFIG(self) -> str:
+        if self.SERVER_USERNAME and self.SERVER_PASSWORD:
+            return f"mongodb://{self.SERVER_USERNAME}:{self.SERVER_PASSWORD}@{self.SERVER_HOST}:{self.SERVER_PORT}/{self.SERVER_DATABASE_NAME}?authSource=admin"
+        return f"mongodb://{self.SERVER_HOST}:{self.SERVER_PORT}/{self.SERVER_DATABASE_NAME}"
 
 
 class PostgresqlConfiguration(BaseModel):
-    pass
+    DATABASE_URL: str = Field(default_factory=lambda: os.getenv("POSTGRES_DATABASE_URL", "postgresql://user:pass@localhost/db"))
+    DATABASE_POOL_SIZE: int = Field(default_factory=lambda: int(os.getenv("POSTGRES_POOL_SIZE", 10)))
+    DATABASE_ECHO: bool = Field(default_factory=lambda: os.getenv("POSTGRES_ECHO", "false").lower() == "true")

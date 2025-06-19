@@ -34,11 +34,14 @@ middlewares = [
                expose_headers=["Authorization", "Content-Type", "XMLHttpRequest", "X-SESSION-CONTENTS"])
 ]
 
-api_app = FastAPI(
-    title=app_config.APP_APINAME,
-    description=app_config.APP_API_DESC,
-    version=app_config.API_VERSION,
-    middleware=middlewares
-)
 
+def boot_app() -> FastAPI:
+    app = FastAPI(
+        title=app_config.APP_APINAME,
+        version=app_config.API_VERSION,
+        docs_url="/docs",
+        middleware=middlewares
+    )
+
+    return app
 
