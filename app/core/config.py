@@ -61,6 +61,25 @@ class MongoDBConfiguration(BaseModel):
 
 
 class PostgresqlConfiguration(BaseModel):
-    DATABASE_URL: str = Field(default_factory=lambda: os.getenv("POSTGRES_DATABASE_URL", "postgresql://user:pass@localhost/db"))
+    # Prefer full connection URL if set
+    DATABASE_URL: str = Field(
+        default_factory=lambda: os.getenv("POSTGRES_DATABASE_URL") or
+        f"postgresql://{os.getenv('POSTGRES_USER', 'user')}:{os.getenv('POSTGRES_PASSWORD', 'pass')}@"
+        f"{os.getenv('POSTGRES_HOST', 'localhost')}:{os.getenv('POSTGRES_PORT', '5432')}/"
+        f"{os.getenv('POSTGRES_DB', 'database')}"
+    )
+
+    # Connection settings
     DATABASE_POOL_SIZE: int = Field(default_factory=lambda: int(os.getenv("POSTGRES_POOL_SIZE", 10)))
+    DATABASE_MAX_OVERFLOW: int = Field(default_factory=lambda: int(os.getenv("POSTGRES_MAX_OVERFLOW", 20)))
+    DATABASE_TIMEOUT: int = Field(default_factory=lambda: int(os.getenv("POSTGRES_TIMEOUT", 30)))  # seconds
     DATABASE_ECHO: bool = Field(default_factory=lambda: os.getenv("POSTGRES_ECHO", "false").lower() == "true")
+    DATABASE_SSLMODE: str = Field(default_factory=lambda: os.getenv("POSTGRES_SSLMODE", "prefer"))
+
+    # Optional debugging or development switches
+    USE_ASYNC_DRIVER: bool = Field(default_factory=lambda: os.getenv("POSTGRES_USE_ASYNC", "false").lower() == "true")
+
+    def sqlalchemy_url(self) -> str:
+        if self.USE_ASYNC_DRIVER:
+            return self.DATABASE_URL.replace("postgresql://", "postgresql+asyncpg://")
+        return self.DATABASE_URL
