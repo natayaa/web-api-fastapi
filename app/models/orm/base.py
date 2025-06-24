@@ -1,10 +1,21 @@
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.sql import func
-from sqlalchemy import Column, DateTime
+from datetime import datetime
+from sqlalchemy.orm import DeclarativeBase
+from sqlalchemy import Column, DateTime, func
 
-Base = declarative_base()
+class Base(DeclarativeBase):
+    """Base class for all SQLAlchemy models"""
+    pass
 
 class TimestampMixin:
-    created_at = Column(DateTime(timezone=True), server_default=func.now())
-    updated_at = Column(DateTime(timezone=True), onupdate=func.now(), server_default=func.now())
-
+    """Adds created_at and updated_at timestamps"""
+    created_at = Column(
+        DateTime(timezone=True),
+        server_default=func.now(),
+        nullable=False
+    )
+    updated_at = Column(
+        DateTime(timezone=True),
+        server_default=func.now(),
+        onupdate=func.now(),
+        nullable=False
+    )

@@ -21,22 +21,34 @@ api_config = APIConfiguration()
 security_hasher = PasswordHasher(hash_len=64) # Argon2 Hasher
 oauth2_schemes = CustomOAuth2Middleware(tokenUrl=api_config.HEADERS_DEFAULT_PATH)
 
+# Password hashing and verification
+def create_hashed_password(plain_password: str) -> str:
+    """Securely hash a password using Argon2"""
+    if not plain_password or len(plain_password) < 8:
+        raise ValueError("Password must be at least 8 characters long")
+    
+    try:
+        return security_hasher.hash(plain_password)
+    except argon2.exceptions.HashingError as e:
+        raise ValueError(f"Password hashing failed: {str(e)}")
 
-# Password hasher and verifier
-def create_hashed_password(plain_password: str = "") -> str:
-    if not plain_password:
-        raise ValueError("[Argon2 Hasher] Password cannot be empty")
 
-    return security_hasher.hash(plain_password) # include randomized salt
-
-def verify_hashed_password(input_password: str = "", hashed_password: str = "") -> bool:
+def verify_hashed_password(input_password: str, hashed_password: str) -> bool:
+    """Verify a password against its Argon2 hash"""
     try:
         security_hasher.verify(hashed_password, input_password)
+        
+        # Check if rehash is needed (if parameters have changed)
+        if security_hasher.check_needs_rehash(hashed_password):
+            return False
+            
         return True
-    except exceptions.InvalidHashError:
-        print(f"[Argon2 Hasher] Invalid hash format : {hashed_password}")
+    except argon2.exceptions.InvalidHashError:
         return False
-    
+    except argon2.exceptions.VerifyMismatchError:
+        return False
+    except Exception as e:
+        raise ValueError(f"Password verification error: {str(e)}")
 # End of it
 
 # Token Generator

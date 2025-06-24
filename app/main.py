@@ -22,16 +22,26 @@ ALLOWED_METHODS = ["GET", "HEAD", "OPTIONS", "PUT", "POST"]
 ALLOW_HEADERS = ["*"]
 
 middlewares = [
-    Middleware(DDoSMiddlewareAPP),
+    #Middleware(DDoSMiddlewareAPP),
     Middleware(GZipMiddleware),
-    Middleware(CORSMiddleware),
     Middleware(WSGIMiddleware),
-    Middleware(CORSMiddleware, 
-               allow_origins=ALLOW_ORIGINS,
-               allow_credentials=True,
-               allow_methods=ALLOWED_METHODS,
-               allow_headers=ALLOW_HEADERS,
-               expose_headers=["Authorization", "Content-Type", "XMLHttpRequest", "X-SESSION-CONTENTS"])
+    #Middleware(HTTPSRedirectMiddleware),
+    # CORS middleware (carefully configured)
+    Middleware(
+        CORSMiddleware,
+        allow_origins=ALLOW_ORIGINS,  # Should be a list of specific origins
+        allow_credentials=True,
+        allow_methods=ALLOWED_METHODS,  # Should be ["GET", "POST", etc.]
+        allow_headers=ALLOW_HEADERS,     # Should include required headers
+        expose_headers=[
+            "Authorization",
+            "Content-Type",
+            "Content-Length",
+            "X-Request-ID",
+            "X-Response-Time"
+        ],
+        max_age=600  # 10 minutes for preflight cache
+    )
 ]
 
 
@@ -45,3 +55,10 @@ def boot_app() -> FastAPI:
 
     return app
 
+
+if __name__ == "__main__":
+    uvicorn.run(
+        app="main:app",
+        host="localhost",
+        reload=True
+    )
