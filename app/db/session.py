@@ -22,11 +22,11 @@ class DatabaseSessionManager:
         self._engine = create_async_engine(
             db_url,
             poolclass=QueuePool,
-            pool_size=2, # typically 0-30,
-            max_overflow=2,
+            pool_size=PostgresqlConfiguration.DATABASE_POOL_SIZE, # typically 0-30,
+            max_overflow=PostgresqlConfiguration.DATABASE_MAX_OVERFLOW,
             pool_pre_ping=True, # reconnect automatically
             pool_recycle=3500, # recycle connection every hour
-            echo=True, # set into database configuration
+            echo=PostgresqlConfiguration.DATABASE_ECHO, # set into database configuration
             connect_args={
                 "timeout": 30,
                 "server_settings": {
