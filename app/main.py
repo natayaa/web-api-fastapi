@@ -56,9 +56,14 @@ def boot_app() -> FastAPI:
     return app
 
 
+from api.v1.endpoints.user import user_endpoint
+pp = FastAPI()
+
+pp.include_router(user_endpoint)
+
 if __name__ == "__main__":
     uvicorn.run(
-        app="main:app",
+        app="main:pp",
         host="localhost",
         reload=True
     )

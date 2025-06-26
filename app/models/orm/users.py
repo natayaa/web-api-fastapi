@@ -7,7 +7,7 @@ from sqlalchemy import String, Boolean, Integer, ForeignKey, Enum as SQLEnum, te
 from sqlalchemy.dialects.postgresql import UUID as PG_UUID, JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from app.models.orm.base import Base, TimestampMixin
+from models.orm.base import Base, TimestampMixin
 
 class UserRole(str, Enum):
     ADMIN = "admin"
@@ -90,6 +90,15 @@ class User(Base, TimestampMixin):
         Integer,
         default=0,
         comment="Consecutive failed login attempts"
+    )
+
+    created_at: Mapped[datetime] = mapped_column(
+        default=datetime.now(),
+        comment="Datetime created the account"
+    )
+
+    modified_at: Mapped[datetime] = mapped_column(
+        comment="Datetime modified the account"
     )
 
     # Relationships

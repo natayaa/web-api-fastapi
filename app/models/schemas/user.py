@@ -19,8 +19,8 @@ class RestrictedUsernames(str, Enum):
     SUPPORT = "support"
 
 class UserBase(BaseModel):
-    email: EmailStr = Field(..., examples="something@gmail.com", description="Must be a valid email address")
-    username: str = Field(..., min_length=4, max_length=40, pattern=r"^[a-zA-Z0-9_]+$")
+    email: EmailStr = Field(examples="something@gmail.com", description="Must be a valid email address")
+    username: str = Field(min_length=4, max_length=40, pattern=r"^[a-zA-Z0-9_]+$")
 
 class UserCreate(UserBase):
     password: str = Field(..., min_length=8, max_length=50)
